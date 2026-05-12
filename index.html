@@ -1,585 +1,690 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>테트리스</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
-        }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #fde8f0 0%, #e8f0fd 100%);
+      min-height: 100vh;
+    }
 
-        .container {
-            display: flex;
-            gap: 30px;
-            background: rgba(20, 20, 30, 0.95);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-        }
+    /* ── 초기 로딩 ── */
+    #initialLoader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      flex-direction: column;
+      gap: 16px;
+      color: #c0a0b8;
+      font-size: 0.9rem;
+    }
 
-        .game-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+    /* ── 인증 화면 ── */
+    #authOverlay {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
 
-        canvas {
-            border: 3px solid #444;
-            background: #1a1a1a;
-            display: block;
-        }
+    .auth-box {
+      background: #fffaf8;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(200, 160, 200, 0.18);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+    }
 
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            min-width: 180px;
-        }
+    .auth-box h2 {
+      font-size: 1.6rem;
+      color: #a07890;
+      margin-bottom: 24px;
+      text-align: center;
+    }
 
-        .info-panel {
-            background: rgba(50, 50, 70, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1.5px solid #f0d8e8;
+    }
 
-        .info-label {
-            font-size: 12px;
-            font-weight: bold;
-            color: #aaa;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
+    .auth-tab {
+      flex: 1;
+      padding: 9px 0;
+      background: #fff8fc;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #c0a0b8;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
 
-        .info-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #fff;
-        }
+    .auth-tab.active { background: #e8b4d0; color: #fff; }
 
-        .next-preview {
-            background: rgba(50, 50, 70, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
+    .auth-error {
+      background: #fde8e8;
+      color: #c07070;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
 
-        #nextCanvas {
-            border: 2px solid #444;
-            background: #1a1a1a;
-            display: block;
-            margin-top: 10px;
-        }
+    .auth-error.show { padding: 10px 14px; max-height: 80px; margin-bottom: 12px; }
 
-        .controls {
-            background: rgba(50, 50, 70, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.8;
-            color: #ccc;
-            border-left: 4px solid #764ba2;
-        }
+    .auth-notice {
+      background: #e4f0e8;
+      color: #50906a;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
 
-        .controls-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #fff;
-        }
+    .auth-notice.show { padding: 10px 14px; max-height: 80px; margin-bottom: 12px; }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
+    .auth-input {
+      width: 100%;
+      padding: 11px 16px;
+      border: 1.5px solid #f0d8e8;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+      background: #fff8fc;
+      color: #5a4060;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
 
-        button {
-            flex: 1;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
+    .auth-input:focus { border-color: #d4a0c0; }
+    .auth-input::placeholder { color: #cbaaba; }
 
-        .btn-start {
-            background: #667eea;
-            color: white;
-        }
+    .auth-submit {
+      width: 100%;
+      padding: 12px;
+      background: #e8b4d0;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
 
-        .btn-start:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-        }
+    .auth-submit:hover { background: #d89ec0; }
+    .auth-submit:disabled { background: #e0c8d8; cursor: default; }
 
-        .btn-pause {
-            background: #764ba2;
-            color: white;
-        }
+    /* ── 앱 화면 ── */
+    #app {
+      display: none;
+      justify-content: center;
+      padding: 60px 16px;
+      min-height: 100vh;
+    }
 
-        .btn-pause:hover {
-            background: #63408a;
-            transform: translateY(-2px);
-        }
+    .container {
+      background: #fffaf8;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(200, 160, 200, 0.15);
+      padding: 36px;
+      width: 100%;
+      max-width: 500px;
+      height: fit-content;
+    }
 
-        .btn-pause:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 12px;
+    }
 
-        .game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 10;
-            display: none;
-        }
+    h1 { font-size: 1.6rem; color: #a07890; letter-spacing: -0.3px; flex-shrink: 0; }
 
-        .game-over.show {
-            display: block;
-        }
+    .user-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
-        .game-over h2 {
-            font-size: 32px;
-            margin-bottom: 20px;
-        }
+    .user-email {
+      font-size: 0.78rem;
+      color: #b898b0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-        .game-over p {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
+    .logout-btn {
+      padding: 5px 12px;
+      background: #f8eef4;
+      color: #c0a0b8;
+      border: 1px solid #e8d0e0;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
 
-        .game-over button {
-            margin-top: 20px;
-            background: #667eea;
-            color: white;
-            padding: 12px 30px;
-        }
+    .logout-btn:hover { background: #f0d8e8; color: #a07890; }
 
-        .game-wrapper {
-            position: relative;
-        }
-    </style>
+    /* ── 입력 영역 ── */
+    .input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .input-row { display: flex; gap: 8px; }
+
+    .input-row input {
+      flex: 1;
+      padding: 11px 16px;
+      border: 1.5px solid #f0d8e8;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+      background: #fff8fc;
+      color: #5a4060;
+      transition: border-color 0.2s;
+    }
+
+    .input-row input:focus { border-color: #d4a0c0; }
+    .input-row input::placeholder { color: #cbaaba; }
+
+    .input-row button {
+      padding: 11px 20px;
+      background: #e8b4d0;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .input-row button:hover { background: #d89ec0; }
+    .input-row button:disabled { background: #e0c8d8; cursor: default; }
+
+    /* ── 우선순위 버튼 ── */
+    .priority-row { display: flex; gap: 8px; }
+
+    .priority-btn {
+      flex: 1;
+      padding: 8px 0;
+      border: 1.5px solid transparent;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .priority-btn[data-p="high"]   { background: #fde8e8; color: #c07070; }
+    .priority-btn[data-p="medium"] { background: #fdf0e0; color: #b08040; }
+    .priority-btn[data-p="low"]    { background: #e4f0e8; color: #50906a; }
+
+    .priority-btn.active[data-p="high"]   { border-color: #e09090; box-shadow: 0 0 0 3px #fde8e860; }
+    .priority-btn.active[data-p="medium"] { border-color: #d0a060; box-shadow: 0 0 0 3px #fdf0e060; }
+    .priority-btn.active[data-p="low"]    { border-color: #70b888; box-shadow: 0 0 0 3px #e4f0e860; }
+
+    /* ── 통계 ── */
+    .stats { font-size: 0.82rem; color: #b898b0; margin-bottom: 14px; }
+
+    /* ── 목록 ── */
+    ul { list-style: none; }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      margin-bottom: 8px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(180, 140, 180, 0.08);
+      border-left: 4px solid #e0d0e8;
+      animation: fadeIn 0.2s ease;
+      transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+
+    li.priority-high   { border-left-color: #f0a8a8; }
+    li.priority-medium { border-left-color: #f0c878; }
+    li.priority-low    { border-left-color: #88d0a0; }
+    li.done            { opacity: 0.55; }
+    li.dragging        { opacity: 0.4; box-shadow: none; }
+    li.drag-over       { box-shadow: 0 0 0 2px #d4a0c0, 0 4px 16px rgba(180,140,180,0.18); transform: scale(1.01); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .drag-handle {
+      color: #d8c8d8;
+      font-size: 1rem;
+      cursor: grab;
+      padding: 0 2px;
+      flex-shrink: 0;
+      user-select: none;
+      transition: color 0.15s;
+    }
+
+    .drag-handle:hover  { color: #b898b8; }
+    .drag-handle:active { cursor: grabbing; }
+
+    li input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #d4a0c0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .todo-text { flex: 1; font-size: 0.95rem; color: #5a4060; word-break: break-all; }
+    li.done .todo-text { text-decoration: line-through; color: #bba8c0; }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      flex-shrink: 0;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: transform 0.1s, box-shadow 0.15s;
+      user-select: none;
+    }
+
+    .badge:hover  { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+    .badge:active { transform: scale(0.96); }
+    .badge::after { content: ' ↻'; font-size: 0.68rem; opacity: 0.6; }
+
+    .badge-high   { background: #fde8e8; color: #c07070; border-color: #f0b8b8; }
+    .badge-medium { background: #fdf0e0; color: #b08040; border-color: #e8c878; }
+    .badge-low    { background: #e4f0e8; color: #50906a; border-color: #90d0a8; }
+
+    li button.del {
+      background: none;
+      border: none;
+      color: #d8c0d0;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 3px 7px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    li button.del:hover { color: #e08080; background: #fde8e8; }
+
+    .empty   { text-align: center; color: #cbaaba; font-size: 0.9rem; padding: 36px 0; }
+    .loading { text-align: center; color: #cbaaba; font-size: 0.9rem; padding: 36px 0; }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #f0d8e8;
+      border-top-color: #e8b4d0;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="game-section">
-            <div class="game-wrapper">
-                <canvas id="gameCanvas" width="300" height="600"></canvas>
-                <div class="game-over" id="gameOver">
-                    <h2>게임 오버</h2>
-                    <p id="finalScore">점수: 0</p>
-                    <p id="finalLevel">레벨: 1</p>
-                    <button onclick="game.restart()">다시 시작</button>
-                </div>
-            </div>
-        </div>
 
-        <div class="sidebar">
-            <div class="next-preview">
-                <div class="info-label">다음 블록</div>
-                <canvas id="nextCanvas" width="120" height="120"></canvas>
-            </div>
+  <!-- 초기 로딩 -->
+  <div id="initialLoader">
+    <div class="spinner" style="width:28px;height:28px;border-width:3px;"></div>
+    <span>잠시만 기다려 주세요...</span>
+  </div>
 
-            <div class="info-panel">
-                <div class="info-label">점수</div>
-                <div class="info-value" id="scoreDisplay">0</div>
-            </div>
-
-            <div class="info-panel">
-                <div class="info-label">레벨</div>
-                <div class="info-value" id="levelDisplay">1</div>
-            </div>
-
-            <div class="info-panel">
-                <div class="info-label">라인</div>
-                <div class="info-value" id="linesDisplay">0</div>
-            </div>
-
-            <div class="button-group">
-                <button class="btn-start" id="startBtn" onclick="game.start()">시작</button>
-                <button class="btn-pause" id="pauseBtn" onclick="game.togglePause()" disabled>일시정지</button>
-            </div>
-
-            <div class="controls">
-                <div class="controls-title">조작 방법</div>
-                <div>← → : 좌우 이동</div>
-                <div>↓ : 빠른 내림</div>
-                <div>Space : 한 번에 내림</div>
-                <div>↑ : 회전</div>
-                <div>P : 일시정지</div>
-            </div>
-        </div>
+  <!-- 인증 화면 -->
+  <div id="authOverlay">
+    <div class="auth-box">
+      <h2>Todo List</h2>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin"  onclick="switchTab('login')">로그인</button>
+        <button class="auth-tab"        id="tabSignup" onclick="switchTab('signup')">회원가입</button>
+      </div>
+      <div class="auth-error"  id="authError"></div>
+      <div class="auth-notice" id="authNotice"></div>
+      <input class="auth-input" type="email"    id="authEmail"    placeholder="이메일" autocomplete="email">
+      <input class="auth-input" type="password" id="authPassword" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+      <button class="auth-submit" id="authSubmit" onclick="handleAuth()">로그인</button>
     </div>
+  </div>
 
-    <script>
-        const BOARD_WIDTH = 10;
-        const BOARD_HEIGHT = 20;
-        const CELL_SIZE = 30;
+  <!-- 앱 화면 -->
+  <div id="app">
+    <div class="container">
+      <div class="app-header">
+        <h1>Todo List</h1>
+        <div class="user-info">
+          <span class="user-email" id="userEmail"></span>
+          <button class="logout-btn" onclick="signOut()">로그아웃</button>
+        </div>
+      </div>
 
-        const TETROMINO_TYPES = {
-            I: { shape: [[1, 1, 1, 1]], color: '#00f0f0' },
-            O: { shape: [[1, 1], [1, 1]], color: '#f0f000' },
-            T: { shape: [[0, 1, 0], [1, 1, 1]], color: '#f000f0' },
-            S: { shape: [[0, 1, 1], [1, 1, 0]], color: '#00f000' },
-            Z: { shape: [[1, 1, 0], [0, 1, 1]], color: '#f00000' },
-            J: { shape: [[1, 0, 0], [1, 1, 1]], color: '#0000f0' },
-            L: { shape: [[0, 0, 1], [1, 1, 1]], color: '#f0a000' }
-        };
+      <div class="input-area">
+        <div class="input-row">
+          <input type="text" id="todoInput" placeholder="할 일을 입력하세요" maxlength="100">
+          <button id="addBtn" onclick="addTodo()">추가</button>
+        </div>
+        <div class="priority-row">
+          <button class="priority-btn active" data-p="high"   onclick="selectPriority('high')">🔴 높음</button>
+          <button class="priority-btn"        data-p="medium" onclick="selectPriority('medium')">🟡 중간</button>
+          <button class="priority-btn"        data-p="low"    onclick="selectPriority('low')">🟢 낮음</button>
+        </div>
+      </div>
 
-        class Game {
-            constructor() {
-                this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.nextCanvas = document.getElementById('nextCanvas');
-                this.nextCtx = this.nextCanvas.getContext('2d');
+      <div class="stats" id="stats"></div>
+      <ul id="todoList"></ul>
+      <div class="empty"   id="empty"   style="display:none">아직 할 일이 없어요.</div>
+      <div class="loading" id="loading" style="display:none"><span class="spinner"></span>불러오는 중...</div>
+    </div>
+  </div>
 
-                this.board = Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0));
-                this.piece = null;
-                this.nextPiece = null;
-                this.score = 0;
-                this.level = 1;
-                this.lines = 0;
-                this.gameRunning = false;
-                this.gamePaused = false;
-                this.lastDropTime = 0;
+  <script>
+    // ════════════════════════════════════════════════
+    //  Supabase 설정 — 아래 두 값을 실제 값으로 교체하세요
+    // ════════════════════════════════════════════════
+    const SUPABASE_URL      = 'https://shqkxaqzbngobvmyifyi.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_oQ5Wo3UEZBhgcyp_DrMUgg_CCTKZO2j';
+    // ════════════════════════════════════════════════
 
-                this.spawnNewPiece();
-                this.updateUI();
-                this.gameLoop();
-            }
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            spawnNewPiece() {
-                if (!this.nextPiece) {
-                    this.nextPiece = this.createRandomPiece();
-                }
-                this.piece = this.nextPiece;
-                this.nextPiece = this.createRandomPiece();
+    // ── 상태 ──────────────────────────────────────
+    let currentUser      = null;
+    let todos            = [];
+    let selectedPriority = 'high';
+    let currentTab       = 'login';
+    let dragId           = null;
+    let isLoading        = false;
 
-                const type = this.getTetrominoType(this.piece.type);
-                this.piece.x = Math.floor((BOARD_WIDTH - type.shape[0].length) / 2);
-                this.piece.y = 0;
-                this.piece.rotation = 0;
+    const PRIORITY = {
+      high:   { label: '높음', cls: 'badge-high',   liCls: 'priority-high'   },
+      medium: { label: '중간', cls: 'badge-medium', liCls: 'priority-medium' },
+      low:    { label: '낮음', cls: 'badge-low',    liCls: 'priority-low'    },
+    };
 
-                if (this.collides()) {
-                    this.endGame();
-                }
-            }
+    // ── DOM ───────────────────────────────────────
+    const initialLoader = document.getElementById('initialLoader');
+    const authOverlay   = document.getElementById('authOverlay');
+    const appEl         = document.getElementById('app');
+    const authErrorEl   = document.getElementById('authError');
+    const authNoticeEl  = document.getElementById('authNotice');
+    const authSubmitEl  = document.getElementById('authSubmit');
+    const userEmailEl   = document.getElementById('userEmail');
+    const todoInput     = document.getElementById('todoInput');
+    const addBtn        = document.getElementById('addBtn');
+    const listEl        = document.getElementById('todoList');
+    const statsEl       = document.getElementById('stats');
+    const emptyEl       = document.getElementById('empty');
+    const loadingEl     = document.getElementById('loading');
 
-            createRandomPiece() {
-                const types = Object.keys(TETROMINO_TYPES);
-                const type = types[Math.floor(Math.random() * types.length)];
-                return {
-                    type,
-                    x: 0,
-                    y: 0,
-                    rotation: 0
-                };
-            }
+    // ── 인증 상태 감지 ─────────────────────────────
+    sb.auth.onAuthStateChange(async (event, session) => {
+      currentUser = session?.user ?? null;
+      initialLoader.style.display = 'none';
 
-            getTetrominoType(type, rotation = 0) {
-                const base = TETROMINO_TYPES[type];
-                let shape = base.shape;
+      if (currentUser) {
+        userEmailEl.textContent = currentUser.email;
+        authOverlay.style.display = 'none';
+        appEl.style.display = 'flex';
+        await loadTodos();
+      } else {
+        authOverlay.style.display = 'flex';
+        appEl.style.display = 'none';
+        todos = [];
+        render();
+      }
+    });
 
-                for (let i = 0; i < rotation % 4; i++) {
-                    shape = this.rotateShape(shape);
-                }
+    // ── 인증 UI ────────────────────────────────────
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabLogin').classList.toggle('active',  tab === 'login');
+      document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
+      authSubmitEl.textContent = tab === 'login' ? '로그인' : '회원가입';
+      setAuthError('');
+      setAuthNotice('');
+    }
 
-                return { shape, color: base.color };
-            }
+    function setAuthError(msg) {
+      authErrorEl.textContent = msg;
+      authErrorEl.classList.toggle('show', !!msg);
+    }
 
-            rotateShape(shape) {
-                const rows = shape.length;
-                const cols = shape[0].length;
-                const rotated = Array(cols).fill(null).map(() => Array(rows).fill(0));
+    function setAuthNotice(msg) {
+      authNoticeEl.textContent = msg;
+      authNoticeEl.classList.toggle('show', !!msg);
+    }
 
-                for (let r = 0; r < rows; r++) {
-                    for (let c = 0; c < cols; c++) {
-                        rotated[c][rows - 1 - r] = shape[r][c];
-                    }
-                }
-                return rotated;
-            }
+    async function handleAuth() {
+      const email    = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
 
-            collides(piece = this.piece, x = piece.x, y = piece.y, rotation = piece.rotation) {
-                const type = this.getTetrominoType(piece.type, rotation);
-                const shape = type.shape;
+      if (!email || !password) { setAuthError('이메일과 비밀번호를 입력해 주세요.'); return; }
+      if (password.length < 6) { setAuthError('비밀번호는 6자 이상이어야 합니다.'); return; }
 
-                for (let r = 0; r < shape.length; r++) {
-                    for (let c = 0; c < shape[r].length; c++) {
-                        if (shape[r][c]) {
-                            const boardX = x + c;
-                            const boardY = y + r;
+      authSubmitEl.disabled = true;
+      setAuthError('');
+      setAuthNotice('');
 
-                            if (boardX < 0 || boardX >= BOARD_WIDTH ||
-                                boardY >= BOARD_HEIGHT ||
-                                (boardY >= 0 && this.board[boardY][boardX])) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-                return false;
-            }
-
-            placePiece() {
-                const type = this.getTetrominoType(this.piece.type, this.piece.rotation);
-                const shape = type.shape;
-
-                for (let r = 0; r < shape.length; r++) {
-                    for (let c = 0; c < shape[r].length; c++) {
-                        if (shape[r][c]) {
-                            const boardX = this.piece.x + c;
-                            const boardY = this.piece.y + r;
-
-                            if (boardY >= 0) {
-                                this.board[boardY][boardX] = type.color;
-                            }
-                        }
-                    }
-                }
-
-                this.clearLines();
-                this.spawnNewPiece();
-            }
-
-            clearLines() {
-                let clearedLines = 0;
-
-                for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
-                    if (this.board[r].every(cell => cell !== 0)) {
-                        this.board.splice(r, 1);
-                        this.board.unshift(Array(BOARD_WIDTH).fill(0));
-                        clearedLines++;
-                        r++;
-                    }
-                }
-
-                if (clearedLines > 0) {
-                    const points = [0, 100, 300, 500, 800];
-                    this.score += points[clearedLines] || 0;
-                    this.lines += clearedLines;
-
-                    const newLevel = Math.floor(this.lines / 10) + 1;
-                    if (newLevel > this.level) {
-                        this.level = newLevel;
-                    }
-                }
-            }
-
-            moveLeft() {
-                if (!this.collides(this.piece, this.piece.x - 1, this.piece.y)) {
-                    this.piece.x--;
-                }
-            }
-
-            moveRight() {
-                if (!this.collides(this.piece, this.piece.x + 1, this.piece.y)) {
-                    this.piece.x++;
-                }
-            }
-
-            moveDown() {
-                if (!this.collides(this.piece, this.piece.x, this.piece.y + 1)) {
-                    this.piece.y++;
-                    return true;
-                }
-                return false;
-            }
-
-            hardDrop() {
-                while (this.moveDown()) {}
-                this.placePiece();
-            }
-
-            rotate() {
-                const newRotation = (this.piece.rotation + 1) % 4;
-                if (!this.collides(this.piece, this.piece.x, this.piece.y, newRotation)) {
-                    this.piece.rotation = newRotation;
-                }
-            }
-
-            update(currentTime) {
-                if (!this.gameRunning || this.gamePaused) return;
-
-                const dropInterval = Math.max(100, 1000 - (this.level - 1) * 100);
-
-                if (currentTime - this.lastDropTime > dropInterval) {
-                    if (!this.moveDown()) {
-                        this.placePiece();
-                    }
-                    this.lastDropTime = currentTime;
-                }
-            }
-
-            draw() {
-                this.ctx.fillStyle = '#1a1a1a';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-                for (let r = 0; r < BOARD_HEIGHT; r++) {
-                    for (let c = 0; c < BOARD_WIDTH; c++) {
-                        if (this.board[r][c]) {
-                            this.ctx.fillStyle = this.board[r][c];
-                            this.ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                            this.ctx.strokeStyle = '#000';
-                            this.ctx.lineWidth = 1;
-                            this.ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                        }
-                    }
-                }
-
-                if (this.piece) {
-                    const type = this.getTetrominoType(this.piece.type, this.piece.rotation);
-                    const shape = type.shape;
-                    this.ctx.fillStyle = type.color;
-
-                    for (let r = 0; r < shape.length; r++) {
-                        for (let c = 0; c < shape[r].length; c++) {
-                            if (shape[r][c]) {
-                                const x = (this.piece.x + c) * CELL_SIZE;
-                                const y = (this.piece.y + r) * CELL_SIZE;
-                                this.ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                                this.ctx.strokeStyle = '#000';
-                                this.ctx.lineWidth = 1;
-                                this.ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                            }
-                        }
-                    }
-                }
-            }
-
-            drawNext() {
-                this.nextCtx.fillStyle = '#1a1a1a';
-                this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
-
-                if (this.nextPiece) {
-                    const type = this.getTetrominoType(this.nextPiece.type);
-                    const shape = type.shape;
-                    this.nextCtx.fillStyle = type.color;
-
-                    const offsetX = (4 - shape[0].length) * CELL_SIZE / 2;
-                    const offsetY = (4 - shape.length) * CELL_SIZE / 2;
-
-                    for (let r = 0; r < shape.length; r++) {
-                        for (let c = 0; c < shape[r].length; c++) {
-                            if (shape[r][c]) {
-                                this.nextCtx.fillRect(offsetX + c * CELL_SIZE, offsetY + r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                                this.nextCtx.strokeStyle = '#444';
-                                this.nextCtx.lineWidth = 1;
-                                this.nextCtx.strokeRect(offsetX + c * CELL_SIZE, offsetY + r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                            }
-                        }
-                    }
-                }
-            }
-
-            updateUI() {
-                document.getElementById('scoreDisplay').textContent = this.score;
-                document.getElementById('levelDisplay').textContent = this.level;
-                document.getElementById('linesDisplay').textContent = this.lines;
-            }
-
-            gameLoop = (currentTime = 0) => {
-                this.update(currentTime);
-                this.draw();
-                this.drawNext();
-                this.updateUI();
-                requestAnimationFrame(this.gameLoop);
-            }
-
-            start() {
-                if (!this.gameRunning) {
-                    this.gameRunning = true;
-                    this.gamePaused = false;
-                    this.lastDropTime = performance.now();
-                    document.getElementById('startBtn').textContent = '게임 중...';
-                    document.getElementById('startBtn').disabled = true;
-                    document.getElementById('pauseBtn').disabled = false;
-                    document.getElementById('gameOver').classList.remove('show');
-                }
-            }
-
-            togglePause() {
-                if (this.gameRunning) {
-                    this.gamePaused = !this.gamePaused;
-                    document.getElementById('pauseBtn').textContent = this.gamePaused ? '계속' : '일시정지';
-                }
-            }
-
-            endGame() {
-                this.gameRunning = false;
-                this.gamePaused = false;
-                document.getElementById('gameOver').classList.add('show');
-                document.getElementById('finalScore').textContent = `점수: ${this.score}`;
-                document.getElementById('finalLevel').textContent = `레벨: ${this.level}`;
-                document.getElementById('startBtn').disabled = false;
-                document.getElementById('startBtn').textContent = '시작';
-                document.getElementById('pauseBtn').disabled = true;
-                document.getElementById('pauseBtn').textContent = '일시정지';
-            }
-
-            restart() {
-                this.board = Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0));
-                this.score = 0;
-                this.level = 1;
-                this.lines = 0;
-                this.piece = null;
-                this.nextPiece = null;
-                this.gamePaused = false;
-                this.spawnNewPiece();
-                this.start();
-            }
+      if (currentTab === 'login') {
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) {
+          const msg = error.message.includes('Invalid login credentials')
+            ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+            : error.message;
+          setAuthError(msg);
         }
+      } else {
+        const { error } = await sb.auth.signUp({ email, password });
+        if (error) {
+          setAuthError(error.message);
+        } else {
+          setAuthNotice('확인 이메일을 전송했습니다. 받은 편지함을 확인하고 링크를 클릭하면 로그인됩니다.');
+        }
+      }
 
-        const game = new Game();
+      authSubmitEl.disabled = false;
+    }
 
-        document.addEventListener('keydown', (e) => {
-            if (!game.gameRunning) return;
+    async function signOut() {
+      await sb.auth.signOut();
+    }
 
-            switch (e.key) {
-                case 'ArrowLeft':
-                    game.moveLeft();
-                    break;
-                case 'ArrowRight':
-                    game.moveRight();
-                    break;
-                case 'ArrowDown':
-                    game.moveDown();
-                    break;
-                case ' ':
-                    game.hardDrop();
-                    e.preventDefault();
-                    break;
-                case 'ArrowUp':
-                    game.rotate();
-                    break;
-                case 'p':
-                case 'P':
-                    game.togglePause();
-                    break;
-            }
-        });
-    </script>
+    document.getElementById('authPassword').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleAuth();
+    });
+
+    // ── 데이터 로드 ────────────────────────────────
+    async function loadTodos() {
+      setLoadingState(true);
+      const { data, error } = await sb
+        .from('todos')
+        .select('*')
+        .order('position', { ascending: true });
+      if (!error) todos = data ?? [];
+      setLoadingState(false);
+      render();
+    }
+
+    function setLoadingState(on) {
+      isLoading = on;
+      loadingEl.style.display = on ? 'block' : 'none';
+    }
+
+    // ── CRUD ───────────────────────────────────────
+    async function addTodo() {
+      const text = todoInput.value.trim();
+      if (!text || isLoading) return;
+
+      addBtn.disabled = true;
+      const { data, error } = await sb
+        .from('todos')
+        .insert({ text, done: false, priority: selectedPriority, position: todos.length, user_id: currentUser.id })
+        .select()
+        .single();
+      addBtn.disabled = false;
+
+      if (!error) {
+        todos.push(data);
+        todoInput.value = '';
+        render();
+      }
+    }
+
+    async function toggleTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      const next = !todo.done;
+      const { error } = await sb.from('todos').update({ done: next }).eq('id', id);
+      if (!error) { todo.done = next; render(); }
+    }
+
+    async function removeTodo(id) {
+      const { error } = await sb.from('todos').delete().eq('id', id);
+      if (!error) { todos = todos.filter(t => t.id !== id); render(); }
+    }
+
+    async function cyclePriority(id) {
+      const order = ['high', 'medium', 'low'];
+      const todo  = todos.find(t => t.id === id);
+      const next  = order[(order.indexOf(todo.priority) + 1) % order.length];
+      const { error } = await sb.from('todos').update({ priority: next }).eq('id', id);
+      if (!error) { todo.priority = next; render(); }
+    }
+
+    // ── 우선순위 선택 ──────────────────────────────
+    function selectPriority(p) {
+      selectedPriority = p;
+      document.querySelectorAll('.priority-btn').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.p === p)
+      );
+    }
+
+    // ── 렌더링 ─────────────────────────────────────
+    function render() {
+      listEl.innerHTML = '';
+      const total = todos.length;
+      const done  = todos.filter(t => t.done).length;
+      statsEl.textContent    = total ? `전체 ${total}개 · 완료 ${done}개` : '';
+      emptyEl.style.display  = total === 0 && !isLoading ? 'block' : 'none';
+
+      todos.forEach(todo => {
+        const p  = PRIORITY[todo.priority] || PRIORITY.medium;
+        const li = document.createElement('li');
+        li.classList.add(p.liCls);
+        if (todo.done) li.classList.add('done');
+        li.dataset.id = todo.id;
+
+        const handle       = document.createElement('span');
+        handle.className   = 'drag-handle';
+        handle.textContent = '⠿';
+        handle.title       = '드래그하여 순서 변경';
+
+        const cb      = document.createElement('input');
+        cb.type       = 'checkbox';
+        cb.checked    = todo.done;
+        cb.addEventListener('change', () => toggleTodo(todo.id));
+
+        const span         = document.createElement('span');
+        span.className     = 'todo-text';
+        span.textContent   = todo.text;
+
+        const badge        = document.createElement('span');
+        badge.className    = `badge ${p.cls}`;
+        badge.textContent  = p.label;
+        badge.title        = '클릭하여 우선순위 변경';
+        badge.addEventListener('click', () => cyclePriority(todo.id));
+
+        const del          = document.createElement('button');
+        del.className      = 'del';
+        del.textContent    = '✕';
+        del.title          = '삭제';
+        del.addEventListener('click', () => removeTodo(todo.id));
+
+        li.draggable = true;
+        li.addEventListener('dragstart', onDragStart);
+        li.addEventListener('dragover',  onDragOver);
+        li.addEventListener('dragleave', onDragLeave);
+        li.addEventListener('drop',      onDrop);
+        li.addEventListener('dragend',   onDragEnd);
+
+        li.append(handle, cb, span, badge, del);
+        listEl.appendChild(li);
+      });
+    }
+
+    todoInput.addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+
+    // ── 드래그 앤 드롭 ──────────────────────────────
+    function onDragStart(e) {
+      dragId = e.currentTarget.dataset.id;
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function onDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    async function onDrop(e) {
+      e.preventDefault();
+      const dropId = e.currentTarget.dataset.id;
+      e.currentTarget.classList.remove('drag-over');
+      if (!dragId || dragId === dropId) return;
+
+      const fromIdx = todos.findIndex(t => t.id === dragId);
+      const toIdx   = todos.findIndex(t => t.id === dropId);
+      if (fromIdx === -1 || toIdx === -1) return;
+
+      const [moved] = todos.splice(fromIdx, 1);
+      todos.splice(toIdx, 0, moved);
+      render(); // 낙관적 업데이트
+
+      await Promise.all(
+        todos.map((t, i) => sb.from('todos').update({ position: i }).eq('id', t.id))
+      );
+    }
+
+    function onDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      dragId = null;
+    }
+  </script>
 </body>
 </html>
