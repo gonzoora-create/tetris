@@ -12,39 +12,44 @@
     <div class="auth-card">
       <h1 class="auth-title">칸반 보드</h1>
 
-      <form id="authForm" novalidate>
+      <div class="tabs" role="tablist">
+        <button class="tab active" id="tabLogin" role="tab" aria-selected="true">로그인</button>
+        <button class="tab" id="tabSignup" role="tab" aria-selected="false">회원가입</button>
+      </div>
+
+      <!-- 로그인 폼 -->
+      <form id="loginForm" novalidate>
         <div class="field">
-          <label for="email">이메일</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="you@example.com"
-            required
-            autocomplete="email"
-          />
+          <label for="loginEmail">이메일</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" required autocomplete="email" />
         </div>
-
         <div class="field">
-          <label for="password">비밀번호</label>
-          <input
-            type="password"
-            id="password"
-            placeholder="6자 이상"
-            required
-            autocomplete="current-password"
-          />
+          <label for="loginPassword">비밀번호</label>
+          <input type="password" id="loginPassword" placeholder="비밀번호 입력" required autocomplete="current-password" />
         </div>
-
-        <p id="errorMsg" class="msg error" aria-live="polite"></p>
-        <p id="successMsg" class="msg success" aria-live="polite"></p>
-
-        <button type="submit" id="submitBtn" class="btn-primary">로그인</button>
+        <p id="loginError" class="msg error" aria-live="polite"></p>
+        <button type="submit" id="loginBtn" class="btn-primary">로그인</button>
       </form>
 
-      <p class="toggle-area">
-        <span id="toggleMsg">계정이 없으신가요?</span>
-        <button type="button" id="toggleBtn" class="btn-link">회원가입</button>
-      </p>
+      <!-- 회원가입 폼 -->
+      <form id="signupForm" novalidate hidden>
+        <div class="field">
+          <label for="signupEmail">이메일</label>
+          <input type="email" id="signupEmail" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="signupPassword">비밀번호</label>
+          <input type="password" id="signupPassword" placeholder="6자 이상" required autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label for="signupPasswordConfirm">비밀번호 확인</label>
+          <input type="password" id="signupPasswordConfirm" placeholder="비밀번호 재입력" required autocomplete="new-password" />
+        </div>
+        <p id="signupError" class="msg error" aria-live="polite"></p>
+        <p id="signupSuccess" class="msg success" aria-live="polite"></p>
+        <button type="submit" id="signupBtn" class="btn-primary">회원가입</button>
+      </form>
+
     </div>
   </div>
 

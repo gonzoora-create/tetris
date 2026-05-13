@@ -49,6 +49,36 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* ===== 탭 ===== */
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  gap: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.65rem;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab.active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+}
+
+.tab:hover:not(.active) {
+  color: var(--text-primary);
+}
+
 /* ===== 폼 필드 ===== */
 form {
   display: flex;
