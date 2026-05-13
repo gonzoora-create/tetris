@@ -35,7 +35,7 @@ async function restoreFromStorage() {
     });
 }
 
-// ===== 드래그 & 드롭 =====
+// ===== 드래그 & 드롭 (마우스) =====
 
 let draggedCard = null;
 
@@ -80,6 +80,47 @@ function initDropZone(list) {
   });
 }
 
+// ===== 터치 드래그 (모바일) =====
+
+function initTouchDrag(card) {
+  card.addEventListener('touchstart', () => {
+    draggedCard = card;
+    card.classList.add('dragging');
+  }, { passive: true });
+
+  card.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!draggedCard) return;
+    const touch = e.touches[0];
+
+    // 카드를 잠깐 숨겨야 아래 요소를 감지할 수 있음
+    card.style.display = 'none';
+    const below = document.elementFromPoint(touch.clientX, touch.clientY);
+    card.style.display = '';
+
+    const list = below?.closest('.card-list');
+    if (!list) return;
+
+    document.querySelectorAll('.card-list').forEach((l) => l.classList.remove('drag-over'));
+    list.classList.add('drag-over');
+
+    const afterCard = getCardAfterCursor(list, touch.clientY);
+    if (afterCard == null) {
+      list.appendChild(card);
+    } else {
+      list.insertBefore(card, afterCard);
+    }
+  }, { passive: false });
+
+  card.addEventListener('touchend', async () => {
+    draggedCard = null;
+    card.classList.remove('dragging');
+    document.querySelectorAll('.card-list').forEach((l) => l.classList.remove('drag-over'));
+    updateAllBadges();
+    await syncToStorage();
+  });
+}
+
 // dragover마다 호출 — DOM 쿼리 추가 금지
 function getCardAfterCursor(list, cursorY) {
   const draggableCards = [...list.querySelectorAll('.card:not(.dragging)')];
@@ -104,9 +145,62 @@ function updateAllBadges() {
   });
 }
 
+// ===== 인라인 편집 =====
+
+function enterEditMode(card, span) {
+  if (card.classList.contains('editing')) return;
+
+  const originalText = span.textContent;
+  card.classList.add('editing');
+  card.draggable = false;
+  span.contentEditable = 'true';
+  span.focus();
+
+  // 커서를 텍스트 끝으로
+  const range = document.createRange();
+  range.selectNodeContents(span);
+  range.collapse(false);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+
+  let done = false;
+
+  function save() {
+    if (done) return;
+    done = true;
+    const newText = span.textContent.trim();
+    span.contentEditable = 'false';
+    card.classList.remove('editing');
+    card.draggable = true;
+    span.removeEventListener('blur', save);
+    span.removeEventListener('keydown', onKeyDown);
+    span.textContent = newText || originalText;
+    if (newText && newText !== originalText) syncToStorage();
+  }
+
+  function cancel() {
+    if (done) return;
+    done = true;
+    span.contentEditable = 'false';
+    card.classList.remove('editing');
+    card.draggable = true;
+    span.textContent = originalText;
+    span.removeEventListener('blur', save);
+    span.removeEventListener('keydown', onKeyDown);
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  }
+
+  span.addEventListener('blur', save);
+  span.addEventListener('keydown', onKeyDown);
+}
+
 // ===== 카드 생성 =====
 
-function createCard({ id, userId, text, createdAt }) {
+function createCard({ id, userId, text, createdAt }, animate = false) {
   const li = document.createElement('li');
   li.className = 'card';
   li.draggable = true;
@@ -122,15 +216,34 @@ function createCard({ id, userId, text, createdAt }) {
   btn.className = 'delete-btn';
   btn.setAttribute('aria-label', '삭제');
   btn.textContent = '×';
-  btn.addEventListener('click', async () => {
-    li.remove();
-    updateAllBadges();
-    await storage.deleteCard(currentUserId, id);
+  btn.addEventListener('click', () => {
+    li.classList.add('card-fade-out');
+    const onFadeEnd = async (e) => {
+      if (e.animationName !== 'cardFadeOut') return;
+      li.removeEventListener('animationend', onFadeEnd);
+      li.remove();
+      updateAllBadges();
+      await storage.deleteCard(currentUserId, id);
+    };
+    li.addEventListener('animationend', onFadeEnd);
   });
 
   li.appendChild(span);
   li.appendChild(btn);
   initDragEvents(li);
+  initTouchDrag(li);
+  li.addEventListener('dblclick', () => enterEditMode(li, span));
+
+  if (animate) {
+    li.classList.add('card-pop');
+    const onPopEnd = (e) => {
+      if (e.animationName !== 'cardPopIn') return;
+      li.classList.remove('card-pop');
+      li.removeEventListener('animationend', onPopEnd);
+    };
+    li.addEventListener('animationend', onPopEnd);
+  }
+
   return li;
 }
 
@@ -150,7 +263,7 @@ function initAddCardForm() {
     const order = list.querySelectorAll('.card').length;
     const card = await storage.addCard(currentUserId, { text, column: select.value, order });
     if (!card) return;
-    list.appendChild(createCard(card));
+    list.appendChild(createCard(card, true));
     updateAllBadges();
 
     input.value = '';
@@ -165,8 +278,8 @@ function initAuthUI(email) {
   const logoutBtn = document.getElementById('logoutBtn');
   if (emailEl) emailEl.textContent = email;
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
+    logoutBtn.addEventListener('click', () => {
+      supabase.auth.signOut();
       window.location.href = 'login.html';
     });
   }
@@ -186,7 +299,6 @@ async function init() {
 
   document.querySelectorAll('.card-list').forEach(initDropZone);
 
-  // HTML 데모 카드 제거 후 Supabase에서 복원
   document.querySelectorAll('.card').forEach((c) => c.remove());
   await restoreFromStorage();
 

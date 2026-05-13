@@ -214,8 +214,9 @@ body {
   padding: 0.7rem 0.85rem;
   cursor: grab;
   box-shadow: var(--shadow);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, border-color 0.15s;
   user-select: none;
+  touch-action: none;
 }
 
 .card:hover {
@@ -255,6 +256,41 @@ body {
 
 .delete-btn:hover {
   color: var(--todo-color);
+}
+
+/* ===== 카드 애니메이션 ===== */
+@keyframes cardPopIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes cardFadeOut {
+  to { opacity: 0; transform: scale(0.85); }
+}
+
+.card-pop {
+  animation: cardPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.card-fade-out {
+  animation: cardFadeOut 0.25s ease forwards;
+  pointer-events: none;
+}
+
+/* ===== 카드 편집 모드 ===== */
+.card.editing {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  cursor: default;
+}
+
+.card-text[contenteditable="true"] {
+  outline: none;
+  cursor: text;
+  border-bottom: 2px dashed #6366f1;
+  padding-bottom: 1px;
+  min-width: 4px;
 }
 
 /* ===== 반응형 ===== */
