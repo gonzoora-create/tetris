@@ -1,0 +1,275 @@
+/* ===== 변수 ===== */
+:root {
+  --todo-color: #ef4444;
+  --todo-light: #fef2f2;
+  --inprogress-color: #f59e0b;
+  --inprogress-light: #fffbeb;
+  --done-color: #22c55e;
+  --done-light: #f0fdf4;
+
+  --bg: #f1f5f9;
+  --card-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-drag: 0 12px 28px rgba(0, 0, 0, 0.18);
+
+  --radius: 12px;
+  --card-radius: 8px;
+}
+
+/* ===== 리셋 & 기본 ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* ===== 헤더 ===== */
+.app-header {
+  background: #1e293b;
+  color: #fff;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.logout-btn {
+  padding: 0.35rem 0.85rem;
+  background: transparent;
+  color: #cbd5e1;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.logout-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+/* ===== 카드 추가 폼 ===== */
+.add-card-form {
+  display: flex;
+  gap: 0.6rem;
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.add-card-form input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+  padding: 0.55rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.add-card-form input[type="text"]:focus {
+  border-color: #6366f1;
+}
+
+.add-card-form select {
+  padding: 0.55rem 0.8rem;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  background: #fff;
+}
+
+.add-card-form button {
+  padding: 0.55rem 1.2rem;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.add-card-form button:hover {
+  background: #4f46e5;
+}
+
+.add-card-form button:active {
+  transform: scale(0.97);
+}
+
+/* ===== 보드 레이아웃 ===== */
+.board {
+  display: flex;
+  gap: 1.2rem;
+  padding: 1.5rem 2rem;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+/* ===== 컬럼 ===== */
+.column {
+  flex: 1;
+  min-width: 260px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 컬럼 헤더 */
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.todo-header      { background: var(--todo-light);       border-top: 4px solid var(--todo-color); }
+.inprogress-header{ background: var(--inprogress-light); border-top: 4px solid var(--inprogress-color); }
+.done-header      { background: var(--done-light);       border-top: 4px solid var(--done-color); }
+
+.column-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  color: #fff;
+}
+
+#badge-todo       { background: var(--todo-color); }
+#badge-inprogress { background: var(--inprogress-color); }
+#badge-done       { background: var(--done-color); }
+
+/* ===== 카드 목록 (드롭 존) ===== */
+.card-list {
+  list-style: none;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 80px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: background 0.2s, outline 0.2s;
+}
+
+.card-list.drag-over {
+  background: #ede9fe;
+  outline: 2px dashed #6366f1;
+  outline-offset: -4px;
+}
+
+/* ===== 카드 ===== */
+.card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 0.7rem 0.85rem;
+  cursor: grab;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  user-select: none;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card:active {
+  cursor: grabbing;
+}
+
+/* 드래그 중인 카드 */
+.card.dragging {
+  opacity: 0.45;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: var(--shadow-drag);
+}
+
+.card-text {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* 삭제 버튼 */
+.delete-btn {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.1rem;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.delete-btn:hover {
+  color: var(--todo-color);
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 768px) {
+  .board {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .column {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .add-card-form {
+    padding: 0.8rem 1rem;
+  }
+}

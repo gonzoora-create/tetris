@@ -1,742 +1,103 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Todo List</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #fde8f0 0%, #e8f0fd 100%);
-      min-height: 100vh;
-    }
-
-    /* ── 초기 로딩 ── */
-    #initialLoader {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      flex-direction: column;
-      gap: 16px;
-      color: #c0a0b8;
-      font-size: 0.9rem;
-    }
-
-    /* ── 인증 화면 ── */
-    #authOverlay {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 16px;
-    }
-
-    .auth-box {
-      background: #fffaf8;
-      border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(200, 160, 200, 0.18);
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 380px;
-    }
-
-    .auth-box h2 {
-      font-size: 1.6rem;
-      color: #a07890;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-
-    .auth-tabs {
-      display: flex;
-      margin-bottom: 24px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1.5px solid #f0d8e8;
-    }
-
-    .auth-tab {
-      flex: 1;
-      padding: 9px 0;
-      background: #fff8fc;
-      border: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #c0a0b8;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .auth-tab.active { background: #e8b4d0; color: #fff; }
-
-    .auth-error {
-      background: #fde8e8;
-      color: #c07070;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      max-height: 0;
-      overflow: hidden;
-      transition: all 0.2s;
-    }
-
-    .auth-error.show { padding: 10px 14px; max-height: 80px; margin-bottom: 12px; }
-
-    .auth-notice {
-      background: #e4f0e8;
-      color: #50906a;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      max-height: 0;
-      overflow: hidden;
-      transition: all 0.2s;
-    }
-
-    .auth-notice.show { padding: 10px 14px; max-height: 80px; margin-bottom: 12px; }
-
-    .auth-input {
-      width: 100%;
-      padding: 11px 16px;
-      border: 1.5px solid #f0d8e8;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      outline: none;
-      background: #fff8fc;
-      color: #5a4060;
-      margin-bottom: 12px;
-      transition: border-color 0.2s;
-    }
-
-    .auth-input:focus { border-color: #d4a0c0; }
-    .auth-input::placeholder { color: #cbaaba; }
-
-    .auth-submit {
-      width: 100%;
-      padding: 12px;
-      background: #e8b4d0;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 0.97rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 4px;
-    }
-
-    .auth-submit:hover { background: #d89ec0; }
-    .auth-submit:disabled { background: #e0c8d8; cursor: default; }
-
-    .auth-divider {
-      text-align: center;
-      color: #cbaaba;
-      font-size: 0.82rem;
-      margin: 16px 0;
-      position: relative;
-    }
-    .auth-divider::before,
-    .auth-divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 42%;
-      height: 1px;
-      background: #f0d8e8;
-    }
-    .auth-divider::before { left: 0; }
-    .auth-divider::after  { right: 0; }
-
-    .auth-google {
-      width: 100%;
-      padding: 11px;
-      background: #fff;
-      color: #5a4060;
-      border: 1.5px solid #f0d8e8;
-      border-radius: 12px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .auth-google:hover { background: #fff8fc; border-color: #d4a0c0; }
-
-    /* ── 앱 화면 ── */
-    #app {
-      display: none;
-      justify-content: center;
-      padding: 60px 16px;
-      min-height: 100vh;
-    }
-
-    .container {
-      background: #fffaf8;
-      border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(200, 160, 200, 0.15);
-      padding: 36px;
-      width: 100%;
-      max-width: 500px;
-      height: fit-content;
-    }
-
-    .app-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 28px;
-      gap: 12px;
-    }
-
-    h1 { font-size: 1.6rem; color: #a07890; letter-spacing: -0.3px; flex-shrink: 0; }
-
-    .user-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
-
-    .user-email {
-      font-size: 0.78rem;
-      color: #b898b0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .logout-btn {
-      padding: 5px 12px;
-      background: #f8eef4;
-      color: #c0a0b8;
-      border: 1px solid #e8d0e0;
-      border-radius: 8px;
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .logout-btn:hover { background: #f0d8e8; color: #a07890; }
-
-    /* ── 입력 영역 ── */
-    .input-area {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-
-    .input-row { display: flex; gap: 8px; }
-
-    .input-row input {
-      flex: 1;
-      padding: 11px 16px;
-      border: 1.5px solid #f0d8e8;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      outline: none;
-      background: #fff8fc;
-      color: #5a4060;
-      transition: border-color 0.2s;
-    }
-
-    .input-row input:focus { border-color: #d4a0c0; }
-    .input-row input::placeholder { color: #cbaaba; }
-
-    .input-row button {
-      padding: 11px 20px;
-      background: #e8b4d0;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-
-    .input-row button:hover { background: #d89ec0; }
-    .input-row button:disabled { background: #e0c8d8; cursor: default; }
-
-    /* ── 우선순위 버튼 ── */
-    .priority-row { display: flex; gap: 8px; }
-
-    .priority-btn {
-      flex: 1;
-      padding: 8px 0;
-      border: 1.5px solid transparent;
-      border-radius: 10px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .priority-btn[data-p="high"]   { background: #fde8e8; color: #c07070; }
-    .priority-btn[data-p="medium"] { background: #fdf0e0; color: #b08040; }
-    .priority-btn[data-p="low"]    { background: #e4f0e8; color: #50906a; }
-
-    .priority-btn.active[data-p="high"]   { border-color: #e09090; box-shadow: 0 0 0 3px #fde8e860; }
-    .priority-btn.active[data-p="medium"] { border-color: #d0a060; box-shadow: 0 0 0 3px #fdf0e060; }
-    .priority-btn.active[data-p="low"]    { border-color: #70b888; box-shadow: 0 0 0 3px #e4f0e860; }
-
-    /* ── 통계 ── */
-    .stats { font-size: 0.82rem; color: #b898b0; margin-bottom: 14px; }
-
-    /* ── 목록 ── */
-    ul { list-style: none; }
-
-    li {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 13px 14px;
-      margin-bottom: 8px;
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(180, 140, 180, 0.08);
-      border-left: 4px solid #e0d0e8;
-      animation: fadeIn 0.2s ease;
-      transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
-    }
-
-    li.priority-high   { border-left-color: #f0a8a8; }
-    li.priority-medium { border-left-color: #f0c878; }
-    li.priority-low    { border-left-color: #88d0a0; }
-    li.done            { opacity: 0.55; }
-    li.dragging        { opacity: 0.4; box-shadow: none; }
-    li.drag-over       { box-shadow: 0 0 0 2px #d4a0c0, 0 4px 16px rgba(180,140,180,0.18); transform: scale(1.01); }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .drag-handle {
-      color: #d8c8d8;
-      font-size: 1rem;
-      cursor: grab;
-      padding: 0 2px;
-      flex-shrink: 0;
-      user-select: none;
-      transition: color 0.15s;
-    }
-
-    .drag-handle:hover  { color: #b898b8; }
-    .drag-handle:active { cursor: grabbing; }
-
-    li input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #d4a0c0;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .todo-text { flex: 1; font-size: 0.95rem; color: #5a4060; word-break: break-all; }
-    li.done .todo-text { text-decoration: line-through; color: #bba8c0; }
-
-    .badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 20px;
-      flex-shrink: 0;
-      letter-spacing: 0.3px;
-      cursor: pointer;
-      border: 1.5px solid transparent;
-      transition: transform 0.1s, box-shadow 0.15s;
-      user-select: none;
-    }
-
-    .badge:hover  { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
-    .badge:active { transform: scale(0.96); }
-    .badge::after { content: ' ↻'; font-size: 0.68rem; opacity: 0.6; }
-
-    .badge-high   { background: #fde8e8; color: #c07070; border-color: #f0b8b8; }
-    .badge-medium { background: #fdf0e0; color: #b08040; border-color: #e8c878; }
-    .badge-low    { background: #e4f0e8; color: #50906a; border-color: #90d0a8; }
-
-    li button.del {
-      background: none;
-      border: none;
-      color: #d8c0d0;
-      font-size: 1rem;
-      cursor: pointer;
-      padding: 3px 7px;
-      border-radius: 8px;
-      transition: color 0.2s, background 0.2s;
-      flex-shrink: 0;
-    }
-
-    li button.del:hover { color: #e08080; background: #fde8e8; }
-
-    .empty   { text-align: center; color: #cbaaba; font-size: 0.9rem; padding: 36px 0; }
-    .loading { text-align: center; color: #cbaaba; font-size: 0.9rem; padding: 36px 0; }
-
-    .spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 2px solid #f0d8e8;
-      border-top-color: #e8b4d0;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>칸반 보드</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- 초기 로딩 -->
-  <div id="initialLoader">
-    <div class="spinner" style="width:28px;height:28px;border-width:3px;"></div>
-    <span>잠시만 기다려 주세요...</span>
-  </div>
-
-  <!-- 인증 화면 -->
-  <div id="authOverlay">
-    <div class="auth-box">
-      <h2>Todo List</h2>
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tabLogin"  onclick="switchTab('login')">로그인</button>
-        <button class="auth-tab"        id="tabSignup" onclick="switchTab('signup')">회원가입</button>
-      </div>
-      <div class="auth-error"  id="authError"></div>
-      <div class="auth-notice" id="authNotice"></div>
-      <input class="auth-input" type="email"    id="authEmail"    placeholder="이메일" autocomplete="email">
-      <input class="auth-input" type="password" id="authPassword" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
-      <button class="auth-submit" id="authSubmit" onclick="handleAuth()">로그인</button>
-      <div class="auth-divider">또는</div>
-      <button class="auth-google" onclick="signInWithGoogle()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
-        Google로 계속하기
-      </button>
+  <header class="app-header">
+    <h1>칸반 보드</h1>
+    <div class="user-info">
+      <span id="userEmail" class="user-email"></span>
+      <button id="logoutBtn" class="logout-btn">로그아웃</button>
     </div>
-  </div>
+  </header>
 
-  <!-- 앱 화면 -->
-  <div id="app">
-    <div class="container">
-      <div class="app-header">
-        <h1>Todo List</h1>
-        <div class="user-info">
-          <span class="user-email" id="userEmail"></span>
-          <button class="logout-btn" onclick="signOut()">로그아웃</button>
-        </div>
+  <form class="add-card-form" id="addCardForm">
+    <input
+      type="text"
+      id="cardInput"
+      placeholder="새 카드 내용 입력..."
+      required
+      autocomplete="off"
+    />
+    <select id="columnSelect">
+      <option value="todo">To-Do</option>
+      <option value="inprogress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+    <button type="submit">+ 추가</button>
+  </form>
+
+  <main class="board">
+
+    <!-- To-Do 컬럼 -->
+    <section class="column" id="col-todo">
+      <div class="column-header todo-header">
+        <span class="column-title">To-Do</span>
+        <span class="badge" id="badge-todo">0</span>
       </div>
+      <ul class="card-list" id="todo" data-column="todo">
+        <li class="card" draggable="true">
+          <span class="card-text">요구사항 분석하기</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+        <li class="card" draggable="true">
+          <span class="card-text">UI 디자인 시안 작성</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+        <li class="card" draggable="true">
+          <span class="card-text">DB 스키마 설계</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+        <li class="card" draggable="true">
+          <span class="card-text">테스트 케이스 작성</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+      </ul>
+    </section>
 
-      <div class="input-area">
-        <div class="input-row">
-          <input type="text" id="todoInput" placeholder="할 일을 입력하세요" maxlength="100">
-          <button id="addBtn" onclick="addTodo()">추가</button>
-        </div>
-        <div class="priority-row">
-          <button class="priority-btn active" data-p="high"   onclick="selectPriority('high')">🔴 높음</button>
-          <button class="priority-btn"        data-p="medium" onclick="selectPriority('medium')">🟡 중간</button>
-          <button class="priority-btn"        data-p="low"    onclick="selectPriority('low')">🟢 낮음</button>
-        </div>
+    <!-- In Progress 컬럼 -->
+    <section class="column" id="col-inprogress">
+      <div class="column-header inprogress-header">
+        <span class="column-title">In Progress</span>
+        <span class="badge" id="badge-inprogress">0</span>
       </div>
+      <ul class="card-list" id="inprogress" data-column="inprogress">
+        <li class="card" draggable="true">
+          <span class="card-text">API 엔드포인트 개발</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+        <li class="card" draggable="true">
+          <span class="card-text">로그인 페이지 구현</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+      </ul>
+    </section>
 
-      <div class="stats" id="stats"></div>
-      <ul id="todoList"></ul>
-      <div class="empty"   id="empty"   style="display:none">아직 할 일이 없어요.</div>
-      <div class="loading" id="loading" style="display:none"><span class="spinner"></span>불러오는 중...</div>
-    </div>
-  </div>
+    <!-- Done 컬럼 -->
+    <section class="column" id="col-done">
+      <div class="column-header done-header">
+        <span class="column-title">Done</span>
+        <span class="badge" id="badge-done">0</span>
+      </div>
+      <ul class="card-list" id="done" data-column="done">
+        <li class="card" draggable="true">
+          <span class="card-text">프로젝트 초기 셋업</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+        <li class="card" draggable="true">
+          <span class="card-text">Git 저장소 생성</span>
+          <button class="delete-btn" aria-label="삭제">×</button>
+        </li>
+      </ul>
+    </section>
 
-  <script>
-    // ════════════════════════════════════════════════
-    //  Supabase 설정 — 아래 두 값을 실제 값으로 교체하세요
-    // ════════════════════════════════════════════════
-    const SUPABASE_URL      = 'https://shqkxaqzbngobvmyifyi.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_oQ5Wo3UEZBhgcyp_DrMUgg_CCTKZO2j';
-    // ════════════════════════════════════════════════
+  </main>
 
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // ── 상태 ──────────────────────────────────────
-    let currentUser      = null;
-    let todos            = [];
-    let selectedPriority = 'high';
-    let currentTab       = 'login';
-    let dragId           = null;
-    let isLoading        = false;
-
-    const PRIORITY = {
-      high:   { label: '높음', cls: 'badge-high',   liCls: 'priority-high'   },
-      medium: { label: '중간', cls: 'badge-medium', liCls: 'priority-medium' },
-      low:    { label: '낮음', cls: 'badge-low',    liCls: 'priority-low'    },
-    };
-
-    // ── DOM ───────────────────────────────────────
-    const initialLoader = document.getElementById('initialLoader');
-    const authOverlay   = document.getElementById('authOverlay');
-    const appEl         = document.getElementById('app');
-    const authErrorEl   = document.getElementById('authError');
-    const authNoticeEl  = document.getElementById('authNotice');
-    const authSubmitEl  = document.getElementById('authSubmit');
-    const userEmailEl   = document.getElementById('userEmail');
-    const todoInput     = document.getElementById('todoInput');
-    const addBtn        = document.getElementById('addBtn');
-    const listEl        = document.getElementById('todoList');
-    const statsEl       = document.getElementById('stats');
-    const emptyEl       = document.getElementById('empty');
-    const loadingEl     = document.getElementById('loading');
-
-    // ── 인증 상태 감지 ─────────────────────────────
-    sb.auth.onAuthStateChange(async (event, session) => {
-      currentUser = session?.user ?? null;
-      initialLoader.style.display = 'none';
-
-      if (currentUser) {
-        userEmailEl.textContent = currentUser.user_metadata?.full_name ?? currentUser.email;
-        authOverlay.style.display = 'none';
-        appEl.style.display = 'flex';
-        await loadTodos();
-      } else {
-        authOverlay.style.display = 'flex';
-        appEl.style.display = 'none';
-        todos = [];
-        render();
-      }
-    });
-
-    // ── 인증 UI ────────────────────────────────────
-    function switchTab(tab) {
-      currentTab = tab;
-      document.getElementById('tabLogin').classList.toggle('active',  tab === 'login');
-      document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
-      authSubmitEl.textContent = tab === 'login' ? '로그인' : '회원가입';
-      setAuthError('');
-      setAuthNotice('');
-    }
-
-    function setAuthError(msg) {
-      authErrorEl.textContent = msg;
-      authErrorEl.classList.toggle('show', !!msg);
-    }
-
-    function setAuthNotice(msg) {
-      authNoticeEl.textContent = msg;
-      authNoticeEl.classList.toggle('show', !!msg);
-    }
-
-    async function handleAuth() {
-      const email    = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value;
-
-      if (!email || !password) { setAuthError('이메일과 비밀번호를 입력해 주세요.'); return; }
-      if (password.length < 6) { setAuthError('비밀번호는 6자 이상이어야 합니다.'); return; }
-
-      authSubmitEl.disabled = true;
-      setAuthError('');
-      setAuthNotice('');
-
-      if (currentTab === 'login') {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) {
-          const msg = error.message.includes('Invalid login credentials')
-            ? '이메일 또는 비밀번호가 올바르지 않습니다.'
-            : error.message;
-          setAuthError(msg);
-        }
-      } else {
-        const { error } = await sb.auth.signUp({ email, password });
-        if (error) {
-          setAuthError(error.message);
-        } else {
-          setAuthNotice('확인 이메일을 전송했습니다. 받은 편지함을 확인하고 링크를 클릭하면 로그인됩니다.');
-        }
-      }
-
-      authSubmitEl.disabled = false;
-    }
-
-    async function signInWithGoogle() {
-      const { error } = await sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'https://gonzoora-create.github.io/tetris/index.html',
-        },
-      });
-      if (error) setAuthError(error.message);
-    }
-
-    async function signOut() {
-      await sb.auth.signOut();
-    }
-
-    document.getElementById('authPassword').addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleAuth();
-    });
-
-    // ── 데이터 로드 ────────────────────────────────
-    async function loadTodos() {
-      setLoadingState(true);
-      const { data, error } = await sb
-        .from('todos')
-        .select('*')
-        .order('position', { ascending: true });
-      if (!error) todos = data ?? [];
-      setLoadingState(false);
-      render();
-    }
-
-    function setLoadingState(on) {
-      isLoading = on;
-      loadingEl.style.display = on ? 'block' : 'none';
-    }
-
-    // ── CRUD ───────────────────────────────────────
-    async function addTodo() {
-      const text = todoInput.value.trim();
-      if (!text || isLoading) return;
-
-      addBtn.disabled = true;
-      const { data, error } = await sb
-        .from('todos')
-        .insert({ text, done: false, priority: selectedPriority, position: todos.length, user_id: currentUser.id })
-        .select()
-        .single();
-      addBtn.disabled = false;
-
-      if (!error) {
-        todos.push(data);
-        todoInput.value = '';
-        render();
-      }
-    }
-
-    async function toggleTodo(id) {
-      const todo = todos.find(t => t.id === id);
-      const next = !todo.done;
-      const { error } = await sb.from('todos').update({ done: next }).eq('id', id);
-      if (!error) { todo.done = next; render(); }
-    }
-
-    async function removeTodo(id) {
-      const { error } = await sb.from('todos').delete().eq('id', id);
-      if (!error) { todos = todos.filter(t => t.id !== id); render(); }
-    }
-
-    async function cyclePriority(id) {
-      const order = ['high', 'medium', 'low'];
-      const todo  = todos.find(t => t.id === id);
-      const next  = order[(order.indexOf(todo.priority) + 1) % order.length];
-      const { error } = await sb.from('todos').update({ priority: next }).eq('id', id);
-      if (!error) { todo.priority = next; render(); }
-    }
-
-    // ── 우선순위 선택 ──────────────────────────────
-    function selectPriority(p) {
-      selectedPriority = p;
-      document.querySelectorAll('.priority-btn').forEach(btn =>
-        btn.classList.toggle('active', btn.dataset.p === p)
-      );
-    }
-
-    // ── 렌더링 ─────────────────────────────────────
-    function render() {
-      listEl.innerHTML = '';
-      const total = todos.length;
-      const done  = todos.filter(t => t.done).length;
-      statsEl.textContent    = total ? `전체 ${total}개 · 완료 ${done}개` : '';
-      emptyEl.style.display  = total === 0 && !isLoading ? 'block' : 'none';
-
-      todos.forEach(todo => {
-        const p  = PRIORITY[todo.priority] || PRIORITY.medium;
-        const li = document.createElement('li');
-        li.classList.add(p.liCls);
-        if (todo.done) li.classList.add('done');
-        li.dataset.id = todo.id;
-
-        const handle       = document.createElement('span');
-        handle.className   = 'drag-handle';
-        handle.textContent = '⠿';
-        handle.title       = '드래그하여 순서 변경';
-
-        const cb      = document.createElement('input');
-        cb.type       = 'checkbox';
-        cb.checked    = todo.done;
-        cb.addEventListener('change', () => toggleTodo(todo.id));
-
-        const span         = document.createElement('span');
-        span.className     = 'todo-text';
-        span.textContent   = todo.text;
-
-        const badge        = document.createElement('span');
-        badge.className    = `badge ${p.cls}`;
-        badge.textContent  = p.label;
-        badge.title        = '클릭하여 우선순위 변경';
-        badge.addEventListener('click', () => cyclePriority(todo.id));
-
-        const del          = document.createElement('button');
-        del.className      = 'del';
-        del.textContent    = '✕';
-        del.title          = '삭제';
-        del.addEventListener('click', () => removeTodo(todo.id));
-
-        li.draggable = true;
-        li.addEventListener('dragstart', onDragStart);
-        li.addEventListener('dragover',  onDragOver);
-        li.addEventListener('dragleave', onDragLeave);
-        li.addEventListener('drop',      onDrop);
-        li.addEventListener('dragend',   onDragEnd);
-
-        li.append(handle, cb, span, badge, del);
-        listEl.appendChild(li);
-      });
-    }
-
-    todoInput.addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
-
-    // ── 드래그 앤 드롭 ──────────────────────────────
-    function onDragStart(e) {
-      dragId = e.currentTarget.dataset.id;
-      e.currentTarget.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    }
-
-    function onDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      e.currentTarget.classList.add('drag-over');
-    }
-
-    function onDragLeave(e) {
-      e.currentTarget.classList.remove('drag-over');
-    }
-
-    async function onDrop(e) {
-      e.preventDefault();
-      const dropId = e.currentTarget.dataset.id;
-      e.currentTarget.classList.remove('drag-over');
-      if (!dragId || dragId === dropId) return;
-
-      const fromIdx = todos.findIndex(t => t.id === dragId);
-      const toIdx   = todos.findIndex(t => t.id === dropId);
-      if (fromIdx === -1 || toIdx === -1) return;
-
-      const [moved] = todos.splice(fromIdx, 1);
-      todos.splice(toIdx, 0, moved);
-      render(); // 낙관적 업데이트
-
-      await Promise.all(
-        todos.map((t, i) => sb.from('todos').update({ position: i }).eq('id', t.id))
-      );
-    }
-
-    function onDragEnd(e) {
-      e.currentTarget.classList.remove('dragging');
-      dragId = null;
-    }
-  </script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

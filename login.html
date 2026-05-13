@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 — 칸반 보드</title>
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+
+  <div class="auth-container">
+    <div class="auth-card">
+      <h1 class="auth-title">칸반 보드</h1>
+
+      <form id="authForm" novalidate>
+        <div class="field">
+          <label for="email">이메일</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="you@example.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="field">
+          <label for="password">비밀번호</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="6자 이상"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <p id="errorMsg" class="msg error" aria-live="polite"></p>
+        <p id="successMsg" class="msg success" aria-live="polite"></p>
+
+        <button type="submit" id="submitBtn" class="btn-primary">로그인</button>
+      </form>
+
+      <p class="toggle-area">
+        <span id="toggleMsg">계정이 없으신가요?</span>
+        <button type="button" id="toggleBtn" class="btn-link">회원가입</button>
+      </p>
+    </div>
+  </div>
+
+  <script type="module" src="auth.js"></script>
+</body>
+</html>
