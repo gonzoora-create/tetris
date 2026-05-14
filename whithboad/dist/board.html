@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whiteboard</title>
+  <script type="module" crossorigin src="./assets/board-qFiAFu9q.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/api-Bx83V4km.js">
+  <link rel="stylesheet" crossorigin href="./assets/board-9ZVCG0Ch.css">
+</head>
+<body>
+  <div id="toolbar">
+    <span id="board-name" style="font-size:14px;font-weight:600;color:#333;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    <span class="divider"></span>
+    <button class="tool-btn" data-type="rect" title="사각형">▭</button>
+    <button class="tool-btn" data-type="diamond" title="마름모">◇</button>
+    <button class="tool-btn" data-type="circle" title="원">○</button>
+    <button class="tool-btn" data-type="oval" title="타원">⬭</button>
+    <span class="divider"></span>
+    <button id="reset-view-btn" title="뷰 리셋">⌂</button>
+  </div>
+
+  <svg id="canvas">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7"
+              refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+      </marker>
+    </defs>
+    <g id="viewport">
+      <g id="edges-layer"></g>
+      <g id="nodes-layer"></g>
+      <g id="handles-layer"></g>
+    </g>
+  </svg>
+
+  <div id="empty-hint">툴바에서 도형을 선택하고 캔버스를 클릭하세요</div>
+  <div id="board-error" hidden>
+    <p>보드를 찾을 수 없습니다.</p>
+    <a href="./index.html">메인으로 돌아가기</a>
+  </div>
+
+  <div id="color-palette" hidden>
+    <div class="color-swatch" data-color="#ffffff" style="background:#ffffff"></div>
+    <div class="color-swatch" data-color="#fef3c7" style="background:#fef3c7"></div>
+    <div class="color-swatch" data-color="#d1fae5" style="background:#d1fae5"></div>
+    <div class="color-swatch" data-color="#dbeafe" style="background:#dbeafe"></div>
+    <div class="color-swatch" data-color="#ede9fe" style="background:#ede9fe"></div>
+    <div class="color-swatch" data-color="#fce7f3" style="background:#fce7f3"></div>
+    <div class="color-swatch" data-color="#fee2e2" style="background:#fee2e2"></div>
+    <div class="color-swatch" data-color="#1f2937" style="background:#1f2937"></div>
+  </div>
+
+</body>
+</html>
